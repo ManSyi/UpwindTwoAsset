@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets" />
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <OutDir>$(SolutionDir)Output\$(Configuration)\Bin\$(ProjectName)\</OutDir>
+    <IntDir>$(SolutionDir)Output\$(Configuration)\Temp\$(ProjectName)\</IntDir>
+    <IncludePath>D:\Program\eigen\eigen-3.4.0;$(SolutionDir)library\include;C:\Program Files (x86)\Intel\oneAPI\mkl\latest\include;$(SolutionDir)src;$(IncludePath)</IncludePath>
+    <ExecutablePath>C:\Program Files (x86)\Intel\oneAPI\mkl\2023.1.0\bin;$(ExecutablePath)</ExecutablePath>
+    <LibraryPath>C:\Program Files (x86)\Intel\oneAPI\compiler\2023.1.0\windows\compiler\lib\intel64_win;C:\Program Files (x86)\Intel\oneAPI\mkl\2023.1.0\lib\intel64;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <UseInteloneMKL>Parallel</UseInteloneMKL>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>D:\Program\EigenRand\EigenRand-0.5.0;D:\Program\spectra\spectra-1.0.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OpenMPSupport>false</OpenMPSupport>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>mkl_intel_lp64.lib;mkl_intel_thread.lib;mkl_core.lib;libiomp5md.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup />
+</Project>

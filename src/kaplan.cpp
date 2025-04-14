@@ -612,6 +612,8 @@ namespace TA
 				ws.utility0[r](k, m) = util_cons(het_inputs, ws.c0[r](k, m)) + disutil_hour(het_inputs, ws.h0[r](k, m));
 				break;
 			case Hour_supply::GHH:
+				ws.c0[r](k, m) = het_inputs.inc[r](k, m) + het_inputs.after_tax_wage[r] * het_inputs.hour_ghh(r);
+				ws.utility0[r](k, m) = util_cons(het_inputs, std::max(ws.c0[r](k, m) + het_inputs.disutility_hour_ghh(r), 1e-8));
 				break;
 			case Hour_supply::NoSupply:
 				ws.c0[r](k, m) = std::max(het_inputs.inc[r](k, m) + het_inputs.after_tax_wage[r] + ws.sdtemp[r](k, m), 1e-8);

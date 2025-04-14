@@ -604,12 +604,7 @@ namespace TA
 		}
 	}
 
-	void
-		solve_rhs(const Het_Inputs& het_inputs, Het_workspace& ws, int r)
-	{
-		ws.rhs.col(r) = -util_cons(het_inputs, ws.c[r]).reshaped().matrix()
-			- ws.V * het_inputs.offdiagHJB.row(r).transpose();
-	}
+
 
 	void
 		solve_convergent_dist(const Het_Outputs& target_params, const Het_Inputs& het_inputs, Het_workspace& ws)

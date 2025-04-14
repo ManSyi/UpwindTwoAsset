@@ -512,8 +512,7 @@ namespace TA
 			ws.Fd_low[r](k, m) = Flow;
 			ws.d_low[r](k, m) = dlow;
 			ws.d_high[r](k, m) = dhigh;
-			int n = 0;
-			for (n = 0; n < het_inputs.maxiter_d; ++n)
+			for (int n = 0; n < het_inputs.maxiter_d; ++n)
 			{
 				droot = (ws.d_high[r](k, m) + ws.d_low[r](k, m)) * 0.5;
 				ws.Fd0[r](k, m) = FdVa(het_inputs, ws, Va, droot, r, k, m);
@@ -585,9 +584,7 @@ namespace TA
 			{
 			case Hour_supply::Seq:
 
-				ws.hour_min[r](k, m) = std::max(-(het_inputs.inc[r](k, m) + ws.sdtemp[r](k, m))
-					/ het_inputs.after_tax_wage[r] + 1e-8, 0.0);
-
+				hour_min(het_inputs, r, k, m, ws.sdtemp[r](k, m), ws);
 				if (ws.hour_min[r](k, m) + het_inputs.tols_hour >= het_inputs.hour_high)
 				{
 					ws.h0[r](k, m) = het_inputs.hour_high;

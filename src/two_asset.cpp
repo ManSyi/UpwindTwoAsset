@@ -404,17 +404,17 @@ namespace TA
 		}
 	}
 
+
 	void
 		solve_convergent_pols(const Het_Outputs& target_params, const Het_Inputs& het_inputs, Het_workspace& ws)
 	{
 		ws.init_bellman();
 		std::swap(ws.V, ws.V_init);
 		ws.eps = 1;
+
 		for (ws.iter = 0; ws.iter != target_params.maxiter_policy; ++ws.iter)
 		{
-
 			solve_HJB(het_inputs, ws);
-			
 			if (ws.iter % 10 == 0)
 			{
 				if (check_within_tols(ws.V, ws.next, target_params.tols_policy, ws.eps))
@@ -424,14 +424,13 @@ namespace TA
 			}
 			std::swap(ws.V, ws.next);
 		}
-		
-		cout << "Couldn't find stationary policies after " << target_params.maxiter_policy << " iterations!!" << endl;
+		std::cout << "Couldn't find stationary policies after " << target_params.maxiter_policy << " iterations!!" << std::endl;
 		print_parameter(het_inputs, ws);
 		exit(0);
 	end:
 		construct_final_assetHJB(het_inputs, ws, ws.sa, ws.sb);
 		construct_distKFE(het_inputs, ws, ws.assetHJB);
-		solve_convergent_dist(target_params, het_inputs, ws); 
+		solve_convergent_dist(target_params, het_inputs, ws);
 	}
 
 	void
@@ -455,30 +454,6 @@ namespace TA
 		for (int r = 0; r < het_inputs.nesk; ++r)
 		{
 			derivative(het_inputs, ws.V, ws.VaF[r], ws.VaB[r], ws.VbF[r], ws.VbB[r], r);
-			
-			if (r < het_inputs.nsk)
-			{
-				// The last column of VbF and the first column of VbB is never used.
-				switch (het_inputs.hour_supply)
-				{
-				case Hour_supply::GHH:
-					ws.VbF[r].col(het_inputs.nb - 1) = utility1(het_inputs, ws.c00[r].col(het_inputs.nb - 1)
-						+ het_inputs.disutility_hour_ghh(r));
-					ws.VbB[r].col(0) = utility1(het_inputs, ws.c00[r].col(0) + het_inputs.disutility_hour_ghh(r));
-					break;
-				default:
-					ws.VbF[r].col(het_inputs.nb - 1) = utility1(het_inputs, ws.c00[r].col(het_inputs.nb - 1));
-					ws.VbB[r].col(0) = utility1(het_inputs, ws.c00[r].col(0));
-					break;
-				}
-			}
-			else
-			{
-				ws.VbF[r].col(het_inputs.nb - 1) = utility1(het_inputs, ws.c00[r].col(het_inputs.nb - 1));
-				ws.VbB[r].col(0) = utility1(het_inputs, ws.c00[r].col(0));
-			}
-
-
 			// b forward
 			het_inputs.solve_unbinding_cons(het_inputs, ws, ws.VbF[r], r,
 				ws.cF[r], ws.scF[r], ws.hF[r], ws.utilityF[r]);
@@ -488,7 +463,7 @@ namespace TA
 
 			// a binding, b forward
 			ws.sb0F[r] = ws.scF[r] + ws.sd0[r];
-			ws.H0B[r] = ws.utilityF[r] + ws.VbF[r] * ws.sb0F[r];
+			ws.H0F[r] = ws.utilityF[r] + ws.VbF[r] * ws.sb0F[r];
 
 			// a binding, b backward
 			ws.sb0B[r] = ws.scB[r] + ws.sd0[r];
@@ -497,22 +472,22 @@ namespace TA
 			// a forward, b forward
 			het_inputs.solve_unbinding_res(het_inputs, ws,
 				ws.VbF[r], ws.VaF[r], ws.scF[r], ws.utilityF[r], r,
-				ws.dFF[r], ws.sdFF[r], ws.saFF[r], ws.sbFF[r], ws.HFF[r]);
+				ws.dFF[r], ws.saFF[r], ws.sbFF[r], ws.HFF[r]);
 
 			// a backward, b forward
 			het_inputs.solve_unbinding_res(het_inputs, ws,
 				ws.VbF[r], ws.VaB[r], ws.scF[r], ws.utilityF[r], r,
-				ws.dBF[r], ws.sdBF[r], ws.saBF[r], ws.sbBF[r], ws.HBF[r]);
+				ws.dBF[r], ws.saBF[r], ws.sbBF[r], ws.HBF[r]);
 
 			// a forward, b backward
 			het_inputs.solve_unbinding_res(het_inputs, ws,
 				ws.VbB[r], ws.VaF[r], ws.scB[r], ws.utilityB[r], r,
-				ws.dFB[r], ws.sdFB[r], ws.saFB[r], ws.sbFB[r], ws.HFB[r]);
+				ws.dFB[r], ws.saFB[r], ws.sbFB[r], ws.HFB[r]);
 
 			// a backward, b backward
 			het_inputs.solve_unbinding_res(het_inputs, ws,
 				ws.VbB[r], ws.VaB[r], ws.scB[r], ws.utilityB[r], r,
-				ws.dBB[r], ws.sdBB[r], ws.saBB[r], ws.sbBB[r], ws.HBB[r]);
+				ws.dBB[r], ws.saBB[r], ws.sbBB[r], ws.HBB[r]);
 
 			het_inputs.solve_binding_pols(het_inputs, ws, r);
 
@@ -522,7 +497,6 @@ namespace TA
 			ws.validBF[r] = ws.sbBF[r] > 0 && ws.saBF[r] < 0;
 			ws.valid0F[r] = ws.sb0F[r] > 0;
 			ws.valid0B[r] = ws.sb0B[r] < 0;
-
 
 			ws.HBF[r].col(het_inputs.nb - 1).setConstant(het_inputs.H_min);
 			ws.HBF[r].row(0).setConstant(het_inputs.H_min);
@@ -540,48 +514,55 @@ namespace TA
 			ws.H0F[r].col(het_inputs.nb - 1).setConstant(het_inputs.H_min);
 
 
-
 			ws.indFB[r] = ws.validFB[r] 
-				&& (!ws.validFF[r] || ws.HFB[r] > ws.HFF[r])
-				&& (!ws.validBB[r] || ws.HFB[r] > ws.HBB[r])
-				&& (!ws.validBF[r] || ws.HFB[r] > ws.HBF[r])
-				&& (ws.HFB[r] > ws.H0B[r])
-				&& (ws.HFB[r] > ws.H0[r]);
+				&& (!ws.validFF[r] || ws.HFB[r] >= ws.HFF[r])
+				&& (!ws.validBB[r] || ws.HFB[r] >= ws.HBB[r])
+				&& (!ws.validBF[r] || ws.HFB[r] >= ws.HBF[r])
+				&& (!ws.valid0B[r] || ws.HFB[r] >= ws.H0B[r])
+				&& (!ws.valid0F[r] || ws.HFB[r] >= ws.H0F[r])
+				&& (ws.HFB[r] >= ws.H0[r]);
 
 			ws.indFF[r] = ws.validFF[r]
 				&& (!ws.validFB[r] || ws.HFF[r] > ws.HFB[r])
-				&& (!ws.validBB[r] || ws.HFF[r] > ws.HBB[r])
-				&& (!ws.validBF[r] || ws.HFF[r] > ws.HBF[r])
-				&& (ws.HFF[r] > ws.H0F[r])
-				&& (ws.HFF[r] > ws.H0[r]);
+				&& (!ws.validBB[r] || ws.HFF[r] >= ws.HBB[r])
+				&& (!ws.validBF[r] || ws.HFF[r] >= ws.HBF[r])
+				&& (!ws.valid0B[r] || ws.HFF[r] >= ws.H0B[r])
+				&& (!ws.valid0F[r] || ws.HFF[r] >= ws.H0F[r])
+				&& (ws.HFF[r] >= ws.H0[r]);
 
 			ws.indBB[r] = ws.validBB[r]
 				&& (!ws.validFF[r] || ws.HBB[r] > ws.HFF[r])
 				&& (!ws.validFB[r] || ws.HBB[r] > ws.HFB[r])
-				&& (!ws.validBF[r] || ws.HBB[r] > ws.HBF[r])
-				&& (ws.HBB[r] > ws.H0B[r])
-				&& (ws.HBB[r] > ws.H0[r]);
+				&& (!ws.validBF[r] || ws.HBB[r] >= ws.HBF[r])
+				&& (!ws.valid0B[r] || ws.HBB[r] >= ws.H0B[r])
+				&& (!ws.valid0F[r] || ws.HBB[r] >= ws.H0F[r])
+				&& (ws.HBB[r] >= ws.H0[r]);
 
 			ws.indBF[r] = ws.validBF[r]
 				&& (!ws.validFF[r] || ws.HBF[r] > ws.HFF[r])
 				&& (!ws.validBB[r] || ws.HBF[r] > ws.HBB[r])
 				&& (!ws.validFB[r] || ws.HBF[r] > ws.HFB[r])
-				&& (ws.HBF[r] > ws.H0F[r])
-				&& (ws.HBF[r] > ws.H0[r]);
+				&& (!ws.valid0B[r] || ws.HBF[r] >= ws.H0B[r])
+				&& (!ws.valid0F[r] || ws.HBF[r] >= ws.H0F[r])
+				&& (ws.HBF[r] >= ws.H0[r]);
 
 			ws.ind0F[r] = ws.valid0F[r]
 				&& (!ws.validFF[r] || ws.H0F[r] > ws.HFF[r])
 				&& (!ws.validBB[r] || ws.H0F[r] > ws.HBB[r])
 				&& (!ws.validBF[r] || ws.H0F[r] > ws.HBF[r])
 				&& (!ws.validFB[r] || ws.H0F[r] > ws.HFB[r])
-				&& (ws.H0F[r] > ws.H0[r]);
+				&& (!ws.valid0B[r] || ws.H0F[r] >= ws.H0B[r])
+				&& (ws.H0F[r] >= ws.H0[r]);
 
 			ws.ind0B[r] = ws.valid0B[r]
 				&& (!ws.validFF[r] || ws.H0B[r] > ws.HFF[r])
 				&& (!ws.validBB[r] || ws.H0B[r] > ws.HBB[r])
 				&& (!ws.validBF[r] || ws.H0B[r] > ws.HBF[r])
 				&& (!ws.validFB[r] || ws.H0B[r] > ws.HFB[r])
-				&& (ws.H0B[r] > ws.H0[r]);
+				&& (!ws.valid0F[r] || ws.H0B[r] > ws.H0F[r])
+				&& (ws.H0B[r] >= ws.H0[r]);
+
+
 
 			ws.ind0[r] = !ws.indFF[r] && !ws.indFB[r] && !ws.indBB[r]
 				&& !ws.indBF[r] && !ws.ind0F[r] && !ws.ind0B[r];
@@ -589,10 +570,6 @@ namespace TA
 			ws.sb[r] = ws.indFF[r].cast<double>() * ws.sbFF[r] + ws.indFB[r].cast<double>() * ws.sbFB[r]
 				+ ws.indBB[r].cast<double>() * ws.sbBB[r] + ws.indBF[r].cast<double>() * ws.sbBF[r]
 				+ ws.ind0F[r].cast<double>() * ws.sb0F[r] + ws.ind0B[r].cast<double>() * ws.sb0B[r];
-
-			ws.sa[r] = ws.indFF[r].cast<double>() * ws.saFF[r] + ws.indFB[r].cast<double>() * ws.saFB[r]
-				+ ws.indBB[r].cast<double>() * ws.saBB[r] + ws.indBF[r].cast<double>() * ws.saBF[r]
-				+ ws.ind0[r].cast<double>() * ws.sa0[r];
 
 			ws.c[r] = (ws.indFB[r].cast<double>() + ws.indBB[r].cast<double>() + ws.ind0B[r].cast<double>()) * ws.cB[r]
 				+ (ws.indFF[r].cast<double>() + ws.indBF[r].cast<double>() + ws.ind0F[r].cast<double>()) * ws.cF[r]
@@ -602,8 +579,16 @@ namespace TA
 				+ ws.indBB[r].cast<double>() * ws.dBB[r] + ws.indBF[r].cast<double>() * ws.dBF[r]
 				+ (ws.ind0F[r].cast<double>() + ws.ind0B[r].cast<double>()) * (-het_inputs.a_drift)
 				+ ws.ind0[r].cast<double>() * ws.d0[r];
+			
+			ws.sa[r] = ws.d[r] + het_inputs.a_drift;
+
 
 			het_inputs.solve_rhs(het_inputs, ws, r);
+
+			ws.adriftB[r] = ws.sa[r].min(0);
+			ws.adriftF[r] = ws.sa[r].max(0);
+			ws.bdriftB[r] = ws.sb[r].min(0);
+			ws.bdriftF[r] = ws.sb[r].max(0);
 
 			construct_assetHJB(het_inputs, ws, r);
 			
@@ -643,7 +628,7 @@ namespace TA
 			}
 			std::swap(ws.dist, ws.next);
 		}
-		cout << "Couldn't find stationary dist after " << target_params.maxiter_dist << " iterations!!" << endl;
+		std::cout << "Couldn't find stationary dist after " << target_params.maxiter_dist << " iterations!!" << endl;
 		print_parameter(het_inputs, ws);
 		exit(0);
 	end:
@@ -658,11 +643,7 @@ namespace TA
 #pragma omp parallel for
 		for (int r = 0; r < het_inputs.nesk; ++r)
 		{
-			ws.adriftB[r] = sa[r].min(0);
-			ws.adriftF[r] = sa[r].max(0);
-			ws.bdriftB[r] = sa[r].min(0);
-			ws.bdriftF[r] = sb[r].max(0);
-			construct_assetHJB(het_inputs, ws, r);
+			ws.assetHJB[r] += het_inputs.diagHJB[r];
 		}
 	}
 
@@ -694,7 +675,6 @@ namespace TA
 			ws.rhs.col(r) = ws.dist * het_inputs.offdiagKFE.col(r);
 			ws.rhs(het_inputs.na * het_inputs.nb_neg, r) += het_inputs.deathrate * het_inputs.DeltaKFE
 				* ws.dist.col(r).sum();
-			// solvers have been computed by "construct_assetKEF"
 			ws.next.col(r) = ws.solvers[r]->solve(ws.rhs.col(r));
 		}
 		
@@ -751,27 +731,6 @@ namespace TA
 	}
 
 
-
-	void
-		solve_deposit(const Het_Inputs& het_inputs, const het2& Va, const het2& Vb,
-			het2& d, het2& Hd)
-	{
-		switch (het_inputs.adj_fun)
-		{
-		case Adj_fun::KAPLAN_ADJ:
-			d = Adj_fun_kaplan::adj1inv(het_inputs, Va / Vb - 1);
-			break;
-		case Adj_fun::AUCLERT_ADJ:
-			d = Adj_fun_auclert::adj1inv(het_inputs, Va / Vb - 1);
-			Hd = Va * d - Vb * (d + Adj_fun_auclert::adj(het_inputs, d.abs()));
-			break;
-		default:
-			break;
-		}
-	}
-
-
-
 	void
 		derivative(const Het_Inputs& het_inputs, const Eigen::MatrixXd& V, het2& VaF, het2& VaB, het2& VbF, het2& VbB, int r)
 	{
@@ -780,16 +739,22 @@ namespace TA
 				- V.col(r).reshaped(het_inputs.na, het_inputs.nb).block(0, 0, het_inputs.na - 1, het_inputs.nb)).array()
 				* het_inputs.dagridinv).max(het_inputs.dVamin);
 
+		VaF.row(het_inputs.na - 1) = VaF.row(het_inputs.na - 2);
+
 		VaB.block(1, 0, het_inputs.na - 1, het_inputs.nb)
 			= VaF.block(0, 0, het_inputs.na - 1, het_inputs.nb);
+
+		VaF.row(0) = VaF.row(1);
 
 		VbF.block(0, 0, het_inputs.na, het_inputs.nb - 1)
 			= ((V.col(r).reshaped(het_inputs.na, het_inputs.nb).block(0, 1, het_inputs.na, het_inputs.nb - 1)
 				- V.col(r).reshaped(het_inputs.na, het_inputs.nb).block(0, 0, het_inputs.na, het_inputs.nb - 1)).array()
 				* het_inputs.dbgridinv).max(het_inputs.dVbmin);
+		VbF.col(het_inputs.nb - 1) = VaF.col(het_inputs.nb - 2);
 
 		VbB.block(0, 1, het_inputs.na, het_inputs.nb - 1)
 			= VbF.block(0, 0, het_inputs.na, het_inputs.nb - 1);
+		VbB.col(0) = VaF.col(1);
 	}
 
 
@@ -900,7 +865,7 @@ namespace TA
 		fhour_foc(const Het_Inputs& het_inputs, const int& r, const int& k, const int& m, const double& sd, const Het_workspace& ws, const double& hour, double& fhour)
 	{
 		fhour = hour - utility2inv(het_inputs, het_inputs.after_tax_wage[r]
-			* utility1(het_inputs, het_inputs.inc[r](k, m) + sd + het_inputs.after_tax_wage[r] * hour));
+			* utility1(het_inputs, std::max(het_inputs.inc[r](k, m) + sd + het_inputs.after_tax_wage[r] * hour, 1e-8)));
 	}
 
 	void

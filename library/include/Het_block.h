@@ -45,7 +45,7 @@ typedef void (*UnbindCons) (const Het_Inputs&, const Het_workspace&, const het2&
 
 typedef void(*UnbindRes) (const Het_Inputs&, const Het_workspace&,
 	const het2&, const het2&, const het2&, const het2&, int,
-	het2&, het2&, het2&, het2&, het2&);
+	het2&, het2&, het2&, het2&);
 
 typedef void (*ResPols) (const Het_Inputs&, Het_workspace& ws);
 
@@ -250,12 +250,14 @@ struct Het_workspace
 
 	double eps;
 	int iter = 0;
+	double tols_pols;
+	int maxiter_policy;
+
 	/*Upwinds*/
 	Tensor VaB;
 	Tensor VaF;
 	Tensor VbB;
 	Tensor VbF;
-
 
 	//New scheme
 	Tensor cF;
@@ -265,6 +267,9 @@ struct Het_workspace
 
 	Tensor scB;
 	Tensor scF;
+	Tensor sbB;
+	Tensor sbF;
+
 	Tensor sdFB;
 	Tensor sdFF;
 	Tensor sdBF;
@@ -273,8 +278,7 @@ struct Het_workspace
 	Tensor sd0;
 	Tensor sdtemp;
 
-	Tensor FdminB;
-	Tensor FdminF;
+
 	Tensor FdB;
 	Tensor FdF;
 
@@ -294,11 +298,8 @@ struct Het_workspace
 	Tensor saFF;
 	Tensor saBB;
 	Tensor saBF;
-	Tensor sa0;
-
 
 	Tensor Fd0;
-	Tensor Fdtemp;
 	//Halmilton
 	Tensor HFB;
 	Tensor HFF;
@@ -310,6 +311,8 @@ struct Het_workspace
 	Tensor H00;
 	Tensor c00;
 	Tensor hour00;
+	Tensor Fd00;
+
 
 	Tensor HF0;
 	Tensor HB0;
@@ -359,7 +362,6 @@ struct Het_workspace
 	Bool validBF;
 	Bool valid0B;
 	Bool valid0F;
-	
 
 	Tensor hour_min;
 	Tensor fhour_max;
@@ -423,7 +425,7 @@ struct Het_Outputs
 	const het& b_dist_grid;
 	const het& a_dist_grid;
 	const Het_target& targets = cal.options().dist_target();
-	Het_convertgent_fun het_fun;
+	Het_convergent_fun het_fun;
 	Het_one_step_fun het_one_step_fun;
 	Het_moments_fun moments_fun;
 	void init();

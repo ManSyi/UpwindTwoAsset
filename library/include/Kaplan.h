@@ -86,7 +86,14 @@ namespace TA
 			solve_both_binding_pols(const Het_Inputs& het_inputs, Het_workspace& ws);
 
 		void
+			solve_FdVaB(const Het_Inputs& het_inputs, Het_workspace& ws, double& droot, double& H, int r, int k, int m);
+
+		void
 			solve_FdVaF(const Het_Inputs& het_inputs, Het_workspace& ws, double& droot, double& H, int r, int k, int m);
+		
+		double
+			FdVa_eval(const Het_Inputs& het_inputs, Het_workspace& ws, const double& Va, const double& d, const double& c, int r, int k, int m);
+		
 		bool
 			Fd_bisec(const Het_Inputs& het_inputs, Het_workspace& ws, const double& Va,
 				const double& dlow, const double& dhigh, const double& Flow, double& droot, int r, int k, int m);
@@ -108,7 +115,7 @@ namespace TA
 		void
 			solve_unbinding_res(const Het_Inputs& het_inputs, const Het_workspace& ws,
 				const het2& Vb, const het2& Va, const het2& sc, const het2& utility, int r,
-				het2& d, het2& sd, het2& sa, het2& sb, het2& H);
+				het2& d, het2& sa, het2& sb, het2& H);
 
 		void
 			check_all_market_clearing(const Calibration& cal, SteadyState& ss);

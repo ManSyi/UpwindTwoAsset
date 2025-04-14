@@ -830,7 +830,7 @@ namespace Nelder_Mead
 }
 
 void
-solve_HA(const Het_convertgent_fun& solve_pols, const Het_moments_fun& moments,
+solve_HA(const Het_convergent_fun& solve_pols, const Het_moments_fun& moments,
 	Het_Inputs& het_inputs, Het_Outputs& targets_params, Het_workspace& ws)
 {
 	if (targets_params.targets.targetFracLiqNeg)

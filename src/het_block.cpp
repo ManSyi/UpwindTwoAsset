@@ -106,8 +106,8 @@ Het_Inputs::init()
 		swap_dist = TA::swap_het_dist;
 		map_pols = TA::convert_pols_map;
 
-		dmin = -akinkgrid * pow((1 - chi0) / chi1, 1 / (chi2 - 1));
-		ra_max = pow((1 - chi0) / chi1, 1 / (chi2 - 1));
+		dmin = -akinkgrid * pow((1 - chi0) / (chi1 * chi2), 1 / (chi2 - 1));
+		ra_max = pow((1 - chi0) / (chi1 * chi2), 1 / (chi2 - 1));
 
 		skill_dist_extend = skill_dist;
 		break;
@@ -243,6 +243,8 @@ Het_Inputs::set_interest()
 	{
 		rb_structure = het2::Constant(na, nb, rb);
 	}
+
+
 }
 
 void
@@ -254,6 +256,11 @@ Het_Inputs::set_income()
 		//a_drift = (ra + deathrate) * agrid * (1 - agrid.pow(14) * std::pow(agrid(na - 1, 0) * 0.999, -14));
 		a_drift = (ra + deathrate) * agrid;
 		b_drift = (rb_structure + deathrate) * bgrid;
+		if ((ra + deathrate) > ra_max)
+		{
+			std::cerr << "ra is greater than ra_max!" << std::endl;
+			std::exit(0);
+		}
 		break;
 	default:
 		break;
@@ -348,8 +355,6 @@ Het_workspace::init()
 	init_empty_tensor(mpc, het_inputs.na, het_inputs.nb, het_inputs.nesk);
 	init_empty_tensor(mpd_a, het_inputs.na, het_inputs.nb, het_inputs.nesk);
 	init_empty_tensor(mpd_b, het_inputs.na, het_inputs.nb, het_inputs.nesk);
-	init_empty_tensor(VaB, het_inputs.na, het_inputs.nb, het_inputs.nesk);
-	init_empty_tensor(VaB, het_inputs.na, het_inputs.nb, het_inputs.nesk);
 
 
 	ccum1.setZero(het_inputs.nab, het_inputs.nesk);
@@ -357,8 +362,6 @@ Het_workspace::init()
 	ccum4.setZero(het_inputs.nab, het_inputs.nesk);
 
 	
-
-
 	bdist.setZero(het_inputs.nb);
 	bcdf.setZero(het_inputs.nb);
 	adist.setZero(het_inputs.na);
@@ -393,14 +396,18 @@ Het_workspace::init()
 	init_empty_tensor(VaF, het_inputs.na, het_inputs.nb, het_inputs.nesk);
 	init_empty_tensor(VbB, het_inputs.na, het_inputs.nb, het_inputs.nesk);
 	init_empty_tensor(VbF, het_inputs.na, het_inputs.nb, het_inputs.nesk);
+
 	init_empty_tensor(cF, het_inputs.na, het_inputs.nb, het_inputs.nesk);
 	init_empty_tensor(cB, het_inputs.na, het_inputs.nb, het_inputs.nesk);
+
 	init_empty_tensor(c0, het_inputs.na, het_inputs.nb, het_inputs.nesk);
 	init_empty_tensor(hF, het_inputs.na, het_inputs.nb, het_inputs.nesk);
 	init_empty_tensor(hB, het_inputs.na, het_inputs.nb, het_inputs.nesk);
 	init_empty_tensor(h0, het_inputs.na, het_inputs.nb, het_inputs.nesk);
 	init_empty_tensor(scF, het_inputs.na, het_inputs.nb, het_inputs.nesk);
 	init_empty_tensor(scB, het_inputs.na, het_inputs.nb, het_inputs.nesk);
+	init_empty_tensor(sbF, het_inputs.na, het_inputs.nb, het_inputs.nesk);
+	init_empty_tensor(sbB, het_inputs.na, het_inputs.nb, het_inputs.nesk);
 
 	init_empty_tensor(sdFB, het_inputs.na, het_inputs.nb, het_inputs.nesk);
 	init_empty_tensor(sdFF, het_inputs.na, het_inputs.nb, het_inputs.nesk);
@@ -411,10 +418,7 @@ Het_workspace::init()
 
 	init_empty_tensor(FdB, het_inputs.na, het_inputs.nb, het_inputs.nesk);
 	init_empty_tensor(FdF, het_inputs.na, het_inputs.nb, het_inputs.nesk);
-	init_empty_tensor(FdminB, het_inputs.na, het_inputs.nb, het_inputs.nesk);
-	init_empty_tensor(FdminF, het_inputs.na, het_inputs.nb, het_inputs.nesk);
 	init_empty_tensor(Fd0, het_inputs.na, het_inputs.nb, het_inputs.nesk);
-	init_empty_tensor(Fdtemp, het_inputs.na, het_inputs.nb, het_inputs.nesk);
 
 	init_empty_tensor(sbFB, het_inputs.na, het_inputs.nb, het_inputs.nesk);
 	init_empty_tensor(sbFF, het_inputs.na, het_inputs.nb, het_inputs.nesk);
@@ -453,8 +457,13 @@ Het_workspace::init()
 	init_empty_tensor(HB0, het_inputs.na, het_inputs.nb, het_inputs.nesk);
 	init_empty_tensor(H00, het_inputs.na, het_inputs.nb, het_inputs.nesk);
 	init_empty_tensor(H0, het_inputs.na, het_inputs.nb, het_inputs.nesk);
+
 	init_empty_tensor(c00, het_inputs.na, het_inputs.nb, het_inputs.nesk);
 	init_empty_tensor(hour00, het_inputs.na, het_inputs.nb, het_inputs.nesk);
+
+
+	init_empty_tensor(Fd00, het_inputs.na, het_inputs.nb, het_inputs.nesk);
+
 	//Policies
 	init_empty_tensor(c, het_inputs.na, het_inputs.nb, het_inputs.nesk);
 	init_empty_tensor(d, het_inputs.na, het_inputs.nb, het_inputs.nesk);
@@ -472,7 +481,6 @@ Het_workspace::init()
 
 	
 	init_empty_tensor(c0, het_inputs.na, het_inputs.nb, het_inputs.nesk);
-	init_empty_tensor(sa0, het_inputs.na, het_inputs.nb, het_inputs.nesk);
 	init_empty_tensor(d0, het_inputs.na, het_inputs.nb, het_inputs.nesk);
 
 
@@ -549,17 +557,17 @@ Het_workspace::init_bellman()
 			switch (het_inputs.hour_supply)
 			{
 			case Hour_supply::Seq:
-				V_init.col(r) = (util_cons(het_inputs, het_inputs.inc[r] + het_inputs.after_tax_wage[r] / 3)
+				V_init.col(r) = (util_cons(het_inputs, het_inputs.inc[r] + het_inputs.after_tax_wage[r] / 3 + het_inputs.a_drift)
 					+ disutil_hour(het_inputs, 1.0 / 3.0)).reshaped().matrix()
 					/ (het_inputs.deathrate + het_inputs.rho);
 				break;
 			case Hour_supply::GHH:
-				V_init.col(r) = util_cons(het_inputs, het_inputs.inc[r] + het_inputs.after_tax_wage[r] * het_inputs.hour_ghh(r))
+				V_init.col(r) = util_cons(het_inputs, het_inputs.inc[r] + het_inputs.after_tax_wage[r] * het_inputs.hour_ghh(r) + het_inputs.a_drift)
 					.reshaped().matrix()
 					/ (het_inputs.deathrate + het_inputs.rho);
 				break;
 			case Hour_supply::NoSupply:
-				V_init.col(r) = util_cons(het_inputs, het_inputs.inc[r] + het_inputs.after_tax_wage[r])
+				V_init.col(r) = util_cons(het_inputs, het_inputs.inc[r] + het_inputs.after_tax_wage[r] + het_inputs.a_drift)
 					.reshaped().matrix()
 					/ (het_inputs.deathrate + het_inputs.rho);
 				break;

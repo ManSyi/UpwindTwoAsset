@@ -346,6 +346,7 @@ namespace TA
 		{
 			int m = 0;
 			int k = 0;
+#pragma omp parallel for private(m, k)
 			for (int r = 0; r < het_inputs.nesk; ++r)
 			{
 				for (m = 0; m < het_inputs.nb; ++m)
@@ -353,14 +354,15 @@ namespace TA
 					for (k = 0; k < het_inputs.na; ++k)
 					{
 						solve_binding_cons(het_inputs, -het_inputs.a_drift(k, m), ws, r, k, m);
-						ws.H00[r](k, m) = ws.utility0[r](k, m);
-						ws.c00[r](k, m) = ws.c0[r](k, m);
-						ws.sd0[r](k, m) = ws.sdtemp[r](k, m);
-						ws.hour00[r](k, m) = ws.hour[r](k, m);
+						ws.Fd00[r](k, m) = FdVa_eval(het_inputs, ws, 0, -het_inputs.a_drift(k, m), ws.c0[r](k, m), r, k, m);
 					}
 				}
-				
+				ws.H00[r] = ws.utility0[r];
+				ws.c00[r] = ws.c0[r];
+				ws.sd0[r] = ws.sdtemp[r];
+				ws.hour00[r] = ws.h0[r];
 			}
+
 		}
 
 		void
@@ -372,95 +374,128 @@ namespace TA
 			{
 				for (k = 0; k < het_inputs.na; ++k)
 				{
-					ws.FdminB[r](k, m) = FdVa(het_inputs, ws, ws.VaB[r](k, m), het_inputs.dmin(k, m), r, k, m);
-					ws.FdminF[r](k, m) = FdVa(het_inputs, ws, ws.VaF[r](k, m), het_inputs.dmin(k, m), r, k, m);
-					if (ws.FdminB[r](k, m) >= 0 && ws.FdminF[r](k, m) >= 0) ws.d0[r](k, m) = -het_inputs.a_drift(k,m);
-					else if (ws.FdminB[r](k, m) < 0 || ws.FdminF[r](k, m) >= 0)
+					
+					solve_FdVaF(het_inputs, ws, ws.dF0[r](k, m), ws.HF0[r](k, m), r, k, m);
+					ws.cF0[r](k, m) = ws.c0[r](k, m);
+					ws.hourF0[r](k, m) = ws.h0[r](k, m);
+					solve_FdVaB(het_inputs, ws, ws.d0[r](k, m), ws.H0[r](k, m), r, k, m);
+					if (ws.HF0[r](k, m) >= ws.H0[r](k, m))
 					{
-						if (-het_inputs.a_drift(k, m) <= het_inputs.dmin(k, m) || FdVa(het_inputs, ws, ws.VaB[r](k, m), -het_inputs.a_drift(k, m), r, k, m) <= 0)
-						{
-							ws.d0[r](k, m) = -het_inputs.a_drift(k, m);
-							ws.H0[r](k, m) = ws.H00[r](k, m);
-						}
-						else
-						{
-							Fd_bisec(het_inputs, ws, ws.VaB[r](k, m), het_inputs.dmin(k,m), -het_inputs.a_drift(k, m), ws.FdminB[r](k, m), ws.d0[r](k, m), r, k, m);
-							ws.H0[r](k, m) = ws.utility0[r](k, m) + (het_inputs.a_drift(k, m) + ws.d0[r](k, m)) * ws.VaB[r](k, m);
-							if (k == 0) ws.H0[r](k, m) = het_inputs.H_min;
-						}
-					}
-					else if (ws.FdminB[r](k, m) > 0 || ws.FdminF[r](k, m) < 0)
-					{
-						solve_FdVaF(het_inputs, ws, ws.d0[r](k, m), ws.H0[r](k, m), r, k, m);
-					}
-					else
-					{
-						if (-het_inputs.a_drift(k, m) <= het_inputs.dmin(k, m) || FdVa(het_inputs, ws, ws.VaB[r](k, m), -het_inputs.a_drift(k, m), r, k, m) <= 0)
-						{
-							solve_FdVaF(het_inputs, ws, ws.d0[r](k, m), ws.H0[r](k, m), r, k, m);
-						}
-						else
-						{
-							solve_FdVaF(het_inputs, ws, ws.dF0[r](k, m), ws.HF0[r](k, m), r, k, m);
-							ws.cF0[r](k, m) = ws.c0[r](k, m);
-							ws.hourF0[r](k, m) = ws.h0[r](k, m);
-							Fd_bisec(het_inputs, ws, ws.VaB[r](k, m), het_inputs.dmin(k, m), -het_inputs.a_drift(k, m), ws.FdminB[r](k, m), ws.d0[r](k, m), r, k, m);
-							ws.H0[r](k, m) = ws.utility0[r](k, m) + (het_inputs.a_drift(k, m) + ws.d0[r](k, m)) * ws.VaB[r](k, m);
-							if (k == 0) ws.H0[r](k, m) = het_inputs.H_min;
-
-							if (ws.HF0[r](k, m) > ws.H0[r](k, m))
-							{
-								ws.d0[r](k, m) = ws.dF0[r](k, m);
-								ws.H0[r](k, m) = ws.HF0[r](k, m);
-								ws.c0[r](k, m) = ws.cF0[r](k, m);
-								ws.h0[r](k, m) = ws.hourF0[r](k, m);
-							}
-						}
+						ws.d0[r](k, m) = ws.dF0[r](k, m);
+						ws.H0[r](k, m) = ws.HF0[r](k, m);
+						ws.c0[r](k, m) = ws.cF0[r](k, m);
+						ws.h0[r](k, m) = ws.hourF0[r](k, m);
 					}
 
-					if (ws.H0[r](k, m) <= ws.H00[r](k, m))
+					if (ws.H0[r](k, m) < ws.H00[r](k, m))
 					{
 						ws.d0[r](k, m) = -het_inputs.a_drift(k,m);
 						ws.c0[r](k, m) = ws.c00[r](k, m);
 						ws.h0[r](k, m) = ws.hour00[r](k, m);
 						ws.H0[r](k, m) = ws.H00[r](k, m);
 					}
-					ws.sa0[r](k, m) = het_inputs.a_drift(k, m) + ws.d0[r](k, m);
 				}
 			}
 
 		}
 
 		void
-			solve_FdVaF(const Het_Inputs& het_inputs, Het_workspace& ws, double& droot, double& H, int r, int k, int m)
+			solve_FdVaB(const Het_Inputs& het_inputs, Het_workspace& ws, double& droot, double& H, int r, int k, int m)
 		{
-			if (FdVa(het_inputs, ws, ws.VaF[r](k, m), -het_inputs.a_drift(k, m), r, k, m) >= 0)
+			if (k == 0)
 			{
-				droot = -het_inputs.a_drift(k, m);
-				H = ws.H00[r](k, m);
+				H = het_inputs.H_min;
+				return;
+			}
+			if (std::abs(ws.VaB[r](k, m)- het_inputs.dVamin) < 1e-12)
+			{
+				H = het_inputs.H_min;
+				return;
+			}
+
+
+			if (ws.Fd00[r](k, m) <= ws.VaB[r](k, m))
+			{
+				H = het_inputs.H_min;
 			}
 			else
 			{
-				if (FdVa(het_inputs, ws, ws.VaF[r](k, m), 1e-9, ws.Fdtemp[r](k, m), r, k, m) < 0)
+				if (!Fd_bisec(het_inputs, ws, ws.VaB[r](k, m), het_inputs.dmin(k, m),
+					-het_inputs.a_drift(k, m), -ws.VaB[r](k, m), droot, r, k, m))
 				{
-					ws.d_high[r](k, m) = het_inputs.dmax;
-					ws.d_low[r](k, m) = 1e-9;
+					std::cerr << "Couldn't find deposit given backward upwind!" << std::endl;
+					std::exit(0);
 				}
-				else if (FdVa(het_inputs, ws, ws.VaF[r](k, m), -1e-9, ws.Fdtemp[r](k, m), r, k, m) < 0)
+				H = ws.utility0[r](k, m) + (het_inputs.a_drift(k, m) + droot) * ws.VaB[r](k, m);
+			}
+		}
+
+		void
+			solve_FdVaF(const Het_Inputs& het_inputs, Het_workspace& ws, double& droot, double& H, int r, int k, int m)
+		{
+
+			if (k == het_inputs.na - 1)
+			{
+				H = het_inputs.H_min;
+				return;
+			}
+			if (std::abs(ws.VaF[r](k, m) - het_inputs.dVamin) < 1e-12)
+			{
+				H = het_inputs.H_min;
+				return;
+			}
+			if (k != 0)
+			{
+				ws.Fd0[r](k, m) = ws.Fd00[r](k, m) - ws.VaF[r](k, m);
+				if (ws.Fd0[r](k, m) >= 0)
 				{
-					ws.d_high[r](k, m) = 0;
-					ws.d_low[r](k, m) = 0;
+					H = het_inputs.H_min;
 				}
 				else
 				{
-					ws.d_high[r](k, m) = -1e-9;
-					ws.d_low[r](k, m) = het_inputs.dmin(k, m);
-					//FdVa(het_inputs, ws, ws.VaF[r](k, m), ws.d_low[r](k, m), ws.Fdtemp[r](k, m), r, k, m);
+					if (FdVa(het_inputs, ws, ws.VaF[r](k, m), 1e-12, ws.Fd_low[r](k, m), r, k, m) < 0)
+					{
+						ws.d_high[r](k, m) = het_inputs.dmax;
+						ws.d_low[r](k, m) = 1e-12;
+					}
+					else if (FdVa(het_inputs, ws, ws.VaF[r](k, m), -1e-12, r, k, m) < 0)
+					{
+						ws.d_high[r](k, m) = 0;
+						ws.d_low[r](k, m) = 0;
+					}
+					else
+					{
+						ws.d_high[r](k, m) = -1e-12;
+						ws.d_low[r](k, m) = -het_inputs.a_drift(k, m);
+						ws.Fd_low[r](k, m) = ws.Fd0[r](k, m);
+					}
+					if (!Fd_bisec(het_inputs, ws, ws.VaF[r](k, m), ws.d_low[r](k, m),
+						ws.d_high[r](k, m), ws.Fd_low[r](k, m), droot, r, k, m))
+					{
+						std::cerr << "Couldn't find deposit given forward upwind!" << std::endl;
+						std::exit(0);
+					}
+					H = ws.utility0[r](k, m) + (het_inputs.a_drift(k, m) + droot) * ws.VaF[r](k, m);
 				}
-				Fd_bisec(het_inputs, ws, ws.VaF[r](k, m), ws.d_low[r](k, m), ws.d_high[r](k, m), ws.FdminF[r](k, m), droot, r, k, m);
-				H = ws.utility0[r](k, m) + (het_inputs.a_drift(k, m) + droot) * ws.VaF[r](k, m);
 			}
-			if (k == het_inputs.na - 1) H = het_inputs.H_min;
+			else
+			{
+				if (FdVa(het_inputs, ws, ws.VaF[r](k, m), -1e-12, r, k, m) > 0 ||
+					FdVa(het_inputs, ws, ws.VaF[r](k, m), 1e-12, ws.Fd_low[r](k, m), r, k, m) > 0)
+				{
+					H = het_inputs.H_min;
+				}
+				else
+				{
+					if (!Fd_bisec(het_inputs, ws, ws.VaF[r](k, m), 1e-12,
+						het_inputs.dmax, ws.Fd_low[r](k, m), droot, r, k, m))
+					{
+						std::cerr << "Couldn't find deposit given forward upwind!" << std::endl;
+						std::exit(0);
+					}
+					H = ws.utility0[r](k, m) + (het_inputs.a_drift(k, m) + droot) * ws.VaF[r](k, m);
+				}
+			}
 		}
 
 		bool 
@@ -470,15 +505,22 @@ namespace TA
 			if (dhigh <= dlow + het_inputs.tols_d)
 			{
 				droot = dlow;
+				solve_binding_cons(het_inputs, droot, ws, r, k, m);
 				return true;
 			}
-			droot = (dhigh + dlow)* 0.5;
-			ws.Fd0[r](k, m) = FdVa(het_inputs, ws, Va, droot, r, k, m);
 
 			ws.Fd_low[r](k, m) = Flow;
-
-			for (int n = 0; n < het_inputs.maxiter_d; ++n)
+			ws.d_low[r](k, m) = dlow;
+			ws.d_high[r](k, m) = dhigh;
+			int n = 0;
+			for (n = 0; n < het_inputs.maxiter_d; ++n)
 			{
+				droot = (ws.d_high[r](k, m) + ws.d_low[r](k, m)) * 0.5;
+				ws.Fd0[r](k, m) = FdVa(het_inputs, ws, Va, droot, r, k, m);
+				if (std::abs(ws.Fd0[r](k, m)) < het_inputs.tols_d)
+				{
+					return true;
+				}
 				if (ws.Fd0[r](k, m) * ws.Fd_low[r](k, m) < 0)
 				{
 					ws.d_high[r](k,m) = droot;
@@ -488,29 +530,27 @@ namespace TA
 					ws.d_low[r](k, m) = droot;
 					ws.Fd_low[r](k, m) = ws.Fd0[r](k, m);
 				}
-				droot = (ws.d_high[r](k, m) + ws.d_low[r](k, m)) * 0.5;
-
-				ws.Fd0[r](k, m)=FdVa(het_inputs, ws, Va, droot, r, k, m);
-				if (std::abs(ws.Fd0[r](k, m)) < het_inputs.tols_d
-					|| std::abs(ws.d_high[r](k, m) - ws.d_low[r](k, m)) < het_inputs.tols_d)
-				{
-					return true;
-				}
 			}
 			return false;
 		}
 
 		double
-			FdVa(const Het_Inputs& het_inputs, Het_workspace& ws, const double& Va,const double& d,  int r, int k, int m)
+			FdVa(const Het_Inputs& het_inputs, Het_workspace& ws, const double& Va, const double& d, int r, int k, int m)
 		{
 			solve_binding_cons(het_inputs, d, ws, r, k, m);
+			return FdVa_eval(het_inputs, ws, Va, d, ws.c0[r](k, m), r, k, m);
+		}
+
+		double
+			FdVa_eval(const Het_Inputs& het_inputs, Het_workspace& ws, const double& Va,const double& d, const double& c,  int r, int k, int m)
+		{
 			switch (het_inputs.adj_fun)
 			{
 			case Adj_fun::KAPLAN_ADJ:
-				return utility1(het_inputs, ws.c0[r](k, m)) * (1 + Adj_fun_kaplan::adj1(het_inputs, d, k, m)) - Va;
+				return utility1(het_inputs, c) * (1 + Adj_fun_kaplan::adj1(het_inputs, d, k, m)) - Va;
 				break;
 			case Adj_fun::AUCLERT_ADJ:
-				return utility1(het_inputs, ws.c0[r](k, m)) * (1 + Adj_fun_auclert::adj1(het_inputs, d, k ,m)) - Va;
+				return utility1(het_inputs, c) * (1 + Adj_fun_auclert::adj1(het_inputs, d, k ,m)) - Va;
 				break;
 			default:
 				break;
@@ -522,17 +562,7 @@ namespace TA
 			FdVa(const Het_Inputs& het_inputs, Het_workspace& ws, const double& Va, const double& d, double& Fd, int r, int k, int m)
 		{
 			solve_binding_cons(het_inputs, d, ws, r, k, m);
-			switch (het_inputs.adj_fun)
-			{
-			case Adj_fun::KAPLAN_ADJ:
-				Fd = utility1(het_inputs, ws.c0[r](k, m)) * (1 + Adj_fun_kaplan::adj1(het_inputs, d, k, m)) - Va;
-				break;
-			case Adj_fun::AUCLERT_ADJ:
-				Fd = utility1(het_inputs, ws.c0[r](k, m)) * (1 + Adj_fun_auclert::adj1(het_inputs, d, k, m)) - Va;
-				break;
-			default:
-				break;
-			}
+			Fd = FdVa_eval(het_inputs, ws, Va, d, ws.c0[r](k, m), r, k, m);
 			return Fd;
 		}
 
@@ -554,7 +584,10 @@ namespace TA
 			switch (het_inputs.hour_supply)
 			{
 			case Hour_supply::Seq:
-				hour_min(het_inputs, r, k, m, ws.sdtemp[r](k, m), ws);
+
+				ws.hour_min[r](k, m) = std::max(-(het_inputs.inc[r](k, m) + ws.sdtemp[r](k, m))
+					/ het_inputs.after_tax_wage[r] + 1e-8, 0.0);
+
 				if (ws.hour_min[r](k, m) + het_inputs.tols_hour >= het_inputs.hour_high)
 				{
 					ws.h0[r](k, m) = het_inputs.hour_high;
@@ -589,59 +622,6 @@ namespace TA
 			}
 		}
 
-//		void
-//			solve_binding_cons(const Het_Inputs& het_inputs, const het2& sd, Het_workspace& ws)
-//		{
-//			int r = 0;
-//			int k = 0;
-//			int m = 0;
-//
-//			switch (het_inputs.hour_supply)
-//			{
-//			case Hour_supply::Seq:
-//#pragma omp parallel for private(m, k)
-//				for (r = 0; r < het_inputs.nsk; ++r)
-//				{
-//					ws.sc0[r].setZero();
-//					for (m = 0; m < het_inputs.nb; ++m)
-//					{
-//						for (k = 0; k < het_inputs.na; ++k)
-//						{
-//							hour_min(het_inputs, r, k, m,  ws);
-//							fhour_supply(het_inputs, r, k, m, ws.hour_min[r], ws, ws.fhour_min[r]);
-//							fhour_supply(het_inputs, r, k, m, het_inputs.hour_high, ws, ws.fhour_max[r]);
-//							if (ws.fhour_min[r] >= 0) ws.h0[r](k, m) = ws.hour_min[r];
-//							else if (ws.fhour_max[r] <= 0) ws.h0[r](k, m) = het_inputs.hour_high;
-//							else
-//							{
-//								if (!hour_secant(het_inputs, r, k, m, ws))
-//									if (!hour_bisec(het_inputs, r, k, m, ws))
-//									{
-//										std::cerr << "Couldn't find consumption when binding!!" << std::endl;
-//										std::exit(0);
-//									}
-//							}
-//							ws.c0[r](k, m) = het_inputs.inc[r](k, m) + het_inputs.after_tax_wage[r] * ws.h0[r](k, m);
-//							ws.Hc0[r](k, m) = util_cons(het_inputs, ws.c0[r](k, m)) + disutil_hour(het_inputs, ws.h0[r](k, m));
-//						}
-//					}
-//				}
-//				break;
-//			case Hour_supply::GHH:
-//#pragma omp parallel for
-//				for (r = 0; r < het_inputs.nsk; ++r)
-//				{
-//					ws.sc0[r].setZero();
-//					ws.c0[r] = het_inputs.inc[r] + het_inputs.after_tax_wage[r] * het_inputs.hour_ghh(r);
-//					ws.Hc0[r] = (ws.c0[r] + het_inputs.disutility_hour_ghh(r) > 0).select(util_cons(het_inputs, ws.c0[r] + het_inputs.disutility_hour_ghh(r)), het_inputs.H_min);
-//				}
-//				break;
-//			default:
-//				break;
-//			}
-//
-//		}
-
 		void
 			solve_unbinding_cons(const Het_Inputs& het_inputs, const Het_workspace& ws, const het2& Vb, int r,
 				het2& c, het2& sc, het2& hour, het2& utility)
@@ -663,16 +643,19 @@ namespace TA
 				c = utility1inv(het_inputs, Vb);
 				sc = het_inputs.inc[r] + het_inputs.after_tax_wage[r] - c;
 				utility = util_cons(het_inputs, c);
+				break;
 			default:
 				break;
 			}
 
 		}
 
+		
+
 		void
 			solve_unbinding_res(const Het_Inputs& het_inputs, const Het_workspace& ws, 
 				const het2& Vb, const het2& Va, const het2& sc, const het2& utility, int r,
-				het2& d, het2& sd, het2& sa, het2& sb, het2& H)
+				het2& d, het2& sa, het2& sb, het2& H)
 		{
 			switch (het_inputs.adj_fun)
 			{

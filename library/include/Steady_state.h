@@ -112,7 +112,7 @@ private:
 
 typedef void (*Het_one_step_fun)(const Het_Inputs& het_inputs, Het_workspace& ws);
 
-typedef void (*Het_convertgent_fun)(const Het_Outputs& target_params,
+typedef void (*Het_convergent_fun)(const Het_Outputs& target_params,
 	const Het_Inputs& het_inputs, Het_workspace& ws);
 
 typedef void (*Het_equm_fun)(Het_equm& het_equm, Het_Inputs& het_inputs, Het_workspace& ws,
@@ -170,7 +170,7 @@ struct Het_calibration
 	Het_Inputs& het_inputs;
 	Het_workspace& ws;
 	Het_Outputs& het_outputs;
-	Het_convertgent_fun het_fun;
+	Het_convergent_fun het_fun;
 	Het_moments_fun moments_fun;
 	void init();
 	 
@@ -206,7 +206,7 @@ struct Het_calibration
 };
 
 void
-solve_HA(const Het_convertgent_fun& solve_pols, const Het_moments_fun& moments,
+solve_HA(const Het_convergent_fun& solve_pols, const Het_moments_fun& moments,
 	Het_Inputs& het_inputs, Het_Outputs& targets_params, Het_workspace& ws);
 
 void

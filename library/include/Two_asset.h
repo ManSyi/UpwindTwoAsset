@@ -43,6 +43,7 @@ namespace TA
 	void
 		fhour_foc(const Het_Inputs& het_inputs, const int& r, const int& k, const int& m, const double& sd, const Het_workspace& ws, const double& hour, double& fhour);
 
+
 	void
 		solve_convergent_pols(const Het_Outputs& target_params, const Het_Inputs& het_inputs, Het_workspace& ws);
 
@@ -84,10 +85,6 @@ namespace TA
 	void
 		derivative(const Het_Inputs& het_inputs, const Eigen::MatrixXd& V, het2& VaF, het2& VaB, het2& VbF, het2& VbB, int r);
 
-	void
-		solve_deposit(const Het_Inputs& het_inputs, const het2& Va, const het2& Vb,
-			het2& d, het2& Hd);
-
 
 	void
 		solve_het_one_step(const Het_Inputs& het_inputs, Het_workspace& ws);
@@ -116,6 +113,7 @@ namespace TA
 
 	void
 		construct_transpose_distKFE(const Het_Inputs& het_inputs, Het_workspace& ws, const std::vector<SpMat>& assetHJB);
+
 
 
 	namespace Adj_fun_auclert

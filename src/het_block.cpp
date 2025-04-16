@@ -45,7 +45,8 @@ Het_Inputs::init()
 	rho_zeta = cal.params("rho_zeta");
 	chi0 = cal.params("chi0");
 	chi2 = cal.params("chi2");
-	chi1 = (options.run().add_innaction ? chi1 = 1 - chi0 : cal.params("chi1"));
+	if (options.run().add_innaction && options.run().pin_chi1) chi1 = 1 - chi0;
+	else chi1 = cal.params("chi1");
 	sigma = cal.params("sigma");
 	a_kink = cal.params("akink");
 	meanlabeff = cal.params("meanlabeff");

@@ -36,7 +36,7 @@ namespace TA
 			double pi = cal.params("pi");
 			double i = rb + pi;
 			double lifespan = cal.params("lifespan");
-			double deathrate = 1 / (4 * lifespan);
+			double deathrate = 1 / (4 * lifespan) * (lifespan > 1);
 			double rho_zeta = std::exp(-0.5);
 			/*Solve illiquid r and KYratio by arbitrage condition*/
 			double alpha = cal.params("alpha");
@@ -102,6 +102,7 @@ namespace TA
 				wage = cal.params("targetwage");
 				r = cal.params("targetra");
 			}
+			if (!op.run().pin_meanlabeff) meanlabeff = cal.params("meanlabeff");
 			double rk = r + deprec;
 			construct_unordered_map_from_list(ss.get_aggregators(),
 				{ {"alpha", alpha}, {"epsilon", epsilon},
@@ -502,7 +503,7 @@ namespace TA
 			Fd_bisec(const Het_Inputs& het_inputs, Het_workspace& ws, const double& Va, 
 				const double& dlow, const double& dhigh, const double& Flow, double& droot, int r, int k, int m)
 		{
-			if (dhigh <= dlow + het_inputs.tols_d)
+			if (dhigh < dlow || std::abs(dhigh - dlow) < 1e-9)
 			{
 				droot = dlow;
 				solve_binding_cons(het_inputs, droot, ws, r, k, m);

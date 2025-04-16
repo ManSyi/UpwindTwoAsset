@@ -817,17 +817,21 @@ namespace TA
 			return true;
 		}
 
-		if (ws.fhour_high[r](k, m) * ws.fhour_low[r](k, m) >= 0)
+		if (ws.fhour_high[r](k, m) * ws.fhour_low[r](k, m) > 0)
 		{
 
 			std::cerr << "Hour_bisec: Root must be bracketed! " << std::endl;
 			return false;
 		}
-		ws.h0[r](k, m) = (ws.hour_high[r](k, m) + ws.hour_low[r](k, m)) * 0.5;
-		fhour_supply(het_inputs, r, k, m, sd, ws.h0[r](k, m), ws, ws.fhour[r](k, m));
 
 		for (int n = 0; n < het_inputs.maxiter_hour; ++n)
 		{
+			ws.h0[r](k, m) = (ws.hour_high[r](k, m) + ws.hour_low[r](k, m)) * 0.5;
+			fhour_supply(het_inputs, r, k, m, sd, ws.h0[r](k, m), ws, ws.fhour[r](k, m));
+			if (std::abs(ws.fhour[r](k, m)) < het_inputs.tols_hour)
+			{
+				return true;
+			}
 			if (ws.fhour[r](k, m) * ws.fhour_low[r](k, m) < 0)
 			{
 				ws.hour_high[r](k, m) = ws.h0[r](k, m);
@@ -836,14 +840,6 @@ namespace TA
 			{
 				ws.hour_low[r](k, m) = ws.h0[r](k, m);
 				ws.fhour_low[r](k, m) = ws.fhour[r](k, m);
-			}
-			ws.h0[r](k, m) = (ws.hour_high[r](k, m) + ws.hour_low[r](k, m)) * 0.5;
-
-			fhour_supply(het_inputs, r, k, m, ws.h0[r](k, m), sd, ws, ws.fhour[r](k, m));
-			if (std::abs(ws.fhour[r](k, m)) < het_inputs.tols_hour
-				|| std::abs(ws.hour_high[r](k, m) - ws.hour_low[r](k, m)) < het_inputs.tols_hour)
-			{
-				return true;
 			}
 		}
 		return false;

@@ -109,19 +109,26 @@ Calibration::set_asset_grid()
 			double nbl = -get_value(parameter_cal_, "transfer") 
 				/ (get_value(parameter_cal_, "rb") + get_value(parameter_cal_, "rb_wedge") 
 					+ get_value(parameter_cal_, "deathrate"));
-			bmin = std::max(nbl + 1e-5, bmin);
 			if (bmin < nbl)
 			{
 				std::cout << "Natual borrowing limit violated!" << "\n";
 				std::cout << "natual borrowing limit = " << nbl << "\n";
 				std::cout << "actual borrowing limit = " << bmin << endl;
 			}
-			parameter bcur_neg = get_value(parameter_cal_, "bcur_neg");
-			nb_neg = get_value(size_cal_, "nb_neg");
-			set_grid(nb - nb_neg, 0, bmax, bcur, b_.segment(nb_neg, nb - nb_neg));
-			set_grid(nb_neg / 2 + 1, bmin, bmin/ 2.0, bcur_neg, b_.segment(0, nb_neg / 2 + 1));
-			/* make b grid dense at FRACbNeg limit and zero */
-			b_.segment(nb_neg / 2 + 1, nb_neg / 2 - 1) = bmin - b_.segment(1, nb_neg / 2 - 1).reverse();
+			bmin = std::max(nbl + 1e-5, bmin);
+			if (bmin > 0)
+			{
+				set_grid(nb, bmin, bmax, bcur, b_);
+			}
+			else
+			{
+				parameter bcur_neg = get_value(parameter_cal_, "bcur_neg");
+				nb_neg = get_value(size_cal_, "nb_neg");
+				set_grid(nb - nb_neg, 0, bmax, bcur, b_.segment(nb_neg, nb - nb_neg));
+				set_grid(nb_neg / 2 + 1, bmin, bmin / 2.0, bcur_neg, b_.segment(0, nb_neg / 2 + 1));
+				/* make b grid dense at FRACbNeg limit and zero */
+				b_.segment(nb_neg / 2 + 1, nb_neg / 2 - 1) = bmin - b_.segment(1, nb_neg / 2 - 1).reverse();
+			}
 		}
 		else
 		{
@@ -592,6 +599,8 @@ read_options(Options& options, std::ifstream& ifs)
 		options.run_.solve_equm = get_value(m, "solve_equm");
 
 		options.run_.add_innaction = get_value(m, "add_innaction");
+		options.run_.pin_chi1 = get_value(m, "pin_chi1");
+		options.run_.pin_meanlabeff = get_value(m, "pin_meanlabeff");
 		options.run_.discrete_process = get_value(m, "discrete_process");
 		options.run_.estimate_process = get_value(m, "estimate_process");
 	}

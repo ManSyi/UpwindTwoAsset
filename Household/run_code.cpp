@@ -81,7 +81,7 @@ solve_model(std::ofstream& of, std::ifstream& ifs, Calibration& cal)
 		solve_ss(cal, ss);
 		end = chrono::high_resolution_clock::now();
 		dur = end - start;
-		std::cout << "\nSolving steady state costs " << chrono::duration_cast<chrono::milliseconds>(dur).count() << endl;
+		std::cout << "\nSolving steady state costs " << chrono::duration_cast<chrono::milliseconds>(dur).count() << " milliseconds" << endl;
 
 		std::cout << "\nWriting calibrations to files..." << endl;
 
@@ -136,6 +136,6 @@ main()
 	solve_model(of, ifs, model);
 	end = chrono::high_resolution_clock::now();
 	dur = end - start;
-	std::cout << "\nSolving the model cost " << chrono::duration_cast<chrono::minutes>(dur).count() << " minutes" << endl;
+	std::cout << "\nSolving the model cost " << chrono::duration_cast<chrono::milliseconds>(dur).count() << " milliseconds" << endl;
 	return 0;
 }

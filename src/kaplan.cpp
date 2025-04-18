@@ -481,8 +481,7 @@ namespace TA
 			}
 			else
 			{
-				if (FdVa(het_inputs, ws, ws.VaF[r](k, m), -1e-12, r, k, m) > 0 ||
-					FdVa(het_inputs, ws, ws.VaF[r](k, m), 1e-12, ws.Fd_low[r](k, m), r, k, m) > 0)
+				if (FdVa(het_inputs, ws, ws.VaF[r](k, m), 1e-12, ws.Fd_low[r](k, m), r, k, m) > 0)
 				{
 					H = het_inputs.H_min;
 				}

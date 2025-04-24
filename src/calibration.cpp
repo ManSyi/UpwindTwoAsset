@@ -597,7 +597,7 @@ read_options(Options& options, std::ifstream& ifs)
 		options.run_.calibration = get_value(m, "calibration");
 		options.run_.solve_ss = get_value(m, "solve_ss");
 		options.run_.solve_equm = get_value(m, "solve_equm");
-
+		options.run_.solve_non_convex = get_value(m, "solve_non_convex");
 		options.run_.add_innaction = get_value(m, "add_innaction");
 		options.run_.pin_chi1 = get_value(m, "pin_chi1");
 		options.run_.pin_meanlabeff = get_value(m, "pin_meanlabeff");

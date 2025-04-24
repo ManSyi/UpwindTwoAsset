@@ -116,6 +116,10 @@ struct Het_Inputs
 	parameter illpremium;
 	
 	// new params
+	parameter AL;
+	parameter AH;
+	parameter a_k;
+	parameter a_alpha;
 	parameter deathrate;
 	parameter rho;
 	parameter rho_zeta;

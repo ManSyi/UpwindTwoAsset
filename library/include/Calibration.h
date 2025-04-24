@@ -78,6 +78,7 @@ struct Run
 	bool discrete_process = 1;
 	bool add_innaction = 1;
 	bool pin_chi1 = 1;
+	bool solve_non_convex = 0;
 	bool pin_meanlabeff = 1;
 	bool fiscal_shock = 1;
 	bool calibration = 1;

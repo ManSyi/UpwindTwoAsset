@@ -111,6 +111,13 @@ Het_Inputs::init()
 		ra_max = pow((1 - chi0) / (chi1 * chi2), 1 / (chi2 - 1));
 
 		skill_dist_extend = skill_dist;
+		if (options.run().solve_non_convex)
+		{
+			AL = cal.params("AL");
+			AH = cal.params("AH");
+			a_k = cal.params("a_k");
+			a_alpha = cal.params("a_alpha");
+		}
 		break;
 	default:
 		break;
@@ -255,13 +262,17 @@ Het_Inputs::set_income()
 	{
 	case Model::KAPLAN:
 		//a_drift = (ra + deathrate) * agrid * (1 - agrid.pow(14) * std::pow(agrid(na - 1, 0) * 0.999, -14));
-		a_drift = (ra + deathrate) * agrid;
-		b_drift = (rb_structure + deathrate) * bgrid;
 		if ((ra + deathrate) > ra_max)
 		{
 			std::cerr << "ra is greater than ra_max!" << std::endl;
 			std::exit(0);
 		}
+		a_drift = (ra + deathrate) * agrid;
+		if (options.run().solve_non_convex)
+		{
+			a_drift += (AL * agrid.pow(a_alpha)).max(AH * (agrid - a_k).max(0).pow(a_alpha));
+		}
+		b_drift = (rb_structure + deathrate) * bgrid;
 		break;
 	default:
 		break;

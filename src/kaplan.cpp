@@ -445,7 +445,7 @@ namespace TA
 				H = het_inputs.H_min;
 				return;
 			}
-			if (k != 0)
+			if (std::abs(het_inputs.a_drift(k, m)) > 1e-12)
 			{
 				ws.Fd0[r](k, m) = ws.Fd00[r](k, m) - ws.VaF[r](k, m);
 				if (ws.Fd0[r](k, m) >= 0)

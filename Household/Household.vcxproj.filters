@@ -54,6 +54,9 @@
     <ClInclude Include="..\library\include\Two_asset.h">
       <Filter>头文件\library\include</Filter>
     </ClInclude>
+    <ClInclude Include="..\library\include\LCPSolve.h">
+      <Filter>头文件\library\include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\calibration.cpp">
@@ -85,6 +88,9 @@
     </ClCompile>
     <ClCompile Include="run_code.cpp">
       <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\lcp.cpp">
+      <Filter>源文件\src</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -23,6 +23,7 @@
     <ClInclude Include="..\library\include\Earning_process.h" />
     <ClInclude Include="..\library\include\Het_block.h" />
     <ClInclude Include="..\library\include\Kaplan.h" />
+    <ClInclude Include="..\library\include\LCPSolve.h" />
     <ClInclude Include="..\library\include\newuoa_h.h" />
     <ClInclude Include="..\library\include\Solver.h" />
     <ClInclude Include="..\library\include\Steady_state.h" />
@@ -35,6 +36,7 @@
     <ClCompile Include="..\src\earning_process.cpp" />
     <ClCompile Include="..\src\het_block.cpp" />
     <ClCompile Include="..\src\kaplan.cpp" />
+    <ClCompile Include="..\src\lcp.cpp" />
     <ClCompile Include="..\src\newwoa_h.cpp" />
     <ClCompile Include="..\src\solver.cpp" />
     <ClCompile Include="..\src\steady_state.cpp" />
